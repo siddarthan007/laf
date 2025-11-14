@@ -1,0 +1,99 @@
+---
+alwaysApply: true
+---
+
+You are an expert in Python, FastAPI, scalable API development, and applied AI. Your guidance ensures high-performance, maintainable, and robust services, with a specialization in asynchronous services serving machine-learning models.
+
+## 🏛️ Key Principles
+
+* **Conciseness:** Deliver precise, technical advice focused on essential elements. Prioritize clarity over verbosity in explanations and examples.
+* **Functional > OOP:** Favor functional and declarative paradigms for core logic. Reserve object-oriented structures for data validation via Pydantic models, avoiding classes for business rules.
+* **DRY:** Eliminate repetition through modular functions, composable helpers, and configuration-driven iterations. Reuse utilities across endpoints and services.
+* **Naming:** Adopt snake_case for variables and functions, incorporating descriptive prefixes like `is_`, `has_`, or `get_` to signal intent and state.
+* **File Structure:** Organize code into flat, intuitive hierarchies using lowercase snake_case: separate concerns into `routers/`, `services/`, `models/`, `utils/`, and `config/` directories.
+* **RORO:** Structure functions to receive a single input object (e.g., a Pydantic model) and return a single output object, simplifying testing and composition.
+* **Resource Efficiency:** Design for low overhead by minimizing global state, using context managers for temporary resources, and preferring lazy initialization where feasible.
+* **Readability First:** Write self-documenting code with inline comments only for complex algorithms. Use type hints everywhere to enable static analysis and IDE support.
+
+-----
+
+## 🐍 Python Core
+
+* **Async Handling:** Declare all I/O operations (e.g., file reads, network calls) as `async def` to leverage non-blocking execution. Reserve synchronous `def` for pure computation, ensuring the event loop remains responsive.
+* **Type Hints and Validation:** Mandate comprehensive type annotations using Pydantic v2+ for models and built-in types for primitives. This enforces runtime checks, reduces errors, and improves code navigation.
+* **Control Flow:** Employ guard clauses for early exits on invalid inputs, flattening decision trees and eliminating nested `if-else` blocks. This enhances testability and reduces cognitive load.
+* **Error Propagation:** Raise domain-specific exceptions early (e.g., `ValueError` for invalid data) rather than catching and re-raising. Let FastAPI's exception handlers centralize responses for consistency.
+* **Iteration and Mapping:** Use list/dict comprehensions or functional tools like `map` and `filter` for transformations. Avoid explicit loops unless performance profiling demands otherwise.
+* **Memory Management:** Process large inputs (e.g., images) in streams or chunks to avoid peak memory spikes. Use weak references for caches and garbage collection hooks for cleanup.
+
+-----
+
+## 🚀 FastAPI Specifics
+
+* **Application Lifecycle:** Implement a `lifespan` context manager for all resource initialization (e.g., model loading, connection pools) during startup and graceful teardown on shutdown. This prevents race conditions and ensures single-instance loading.
+* **Dependency Injection:** Leverage `Depends` for injecting shared resources (e.g., database pools, model pipelines) into routes. Scope dependencies narrowly—request-scoped for mutable state, app-scoped for read-only globals—to optimize reuse and isolation.
+* **Error Handling Strategy:** Distinguish expected failures (e.g., validation errors) with `HTTPException` for direct client feedback. Capture unexpected errors via custom middleware that logs traces, sanitizes sensitive data, and returns generic 500 responses.
+* **Input/Output Validation:** Define Pydantic `BaseModel` subclasses for every request body and response, enabling automatic serialization, deserialization, and schema generation (e.g., for OpenAPI docs). Use `Field` for constraints like max_length or regex patterns.
+* **File Handling:** Accept uploads via `UploadFile` with `File(...)`, validating MIME types upfront. Read files asynchronously in chunks for large payloads, storing temporarily only if processing demands persistence.
+* **Performance Tuning:** Enable CORS judiciously, compress responses with middleware, and use `background_tasks` for non-critical post-processing to free up the response cycle.
+* **Testing Mindset:** Write unit tests for services in isolation using `pytest` and `httpx` for async endpoints. Mock dependencies to simulate edge cases without resource overhead.
+
+-----
+
+## 🗄️ PostgreSQL
+
+### Preferred: `psycopg` (v3) for Async Operations
+
+* **Async Mandate:** Exclusively use `psycopg` v3 for its native `asyncio` integration, avoiding the blocking pitfalls of older drivers. Install via `pip install "psycopg[binary,pool]"` for pooled, binary-protocol efficiency.
+* **Pooling Discipline:** Initialize a single `AsyncConnectionPool` in the app's `lifespan` startup, configuring min/max sizes based on expected concurrency (e.g., min=5, max=20). Store it in `app.state` for dependency injection.
+* **Query Execution:** Acquire connections via `async with pool.acquire()` and cursors via `async with conn.cursor()`. Parameterize all queries with tuples to prevent injection, and use row factories (e.g., dict or custom class) for structured results.
+* **Transaction Management:** Wrap multi-statement operations in explicit `async with conn.transaction():` blocks to ensure atomicity. Roll back on exceptions automatically via context exit.
+* **Query Optimization:** Index frequently filtered columns, use `EXPLAIN ANALYZE` for tuning, and batch inserts/updates with `executemany` to reduce round-trips.
+* **Alternative Fallback:** If `psycopg` is unavailable, wrap every `psycopg2` call in `run_in_threadpool` to offload blocking I/O. Limit this to legacy migrations, as it incurs thread overhead.
+
+-----
+
+## ⚙️ SQLAlchemy Rule (Async-First)
+
+* **Async Only:** Configure `create_async_engine()` exclusively with `psycopg[async]` driver, routing all database I/O through `async_sessionmaker`. Prohibit mixing synchronous and asynchronous engines to maintain event loop integrity.
+
+* **One Engine per App:** Establish a single engine and session factory during `lifespan` startup, injecting sessions via a `get_session` dependency. This centralizes configuration and avoids redundant connections.
+
+* **Thin Models:** Restrict ORM models to defining table schemas and relationships—defer business logic and validation to Pydantic models. This keeps the persistence layer lightweight and focused.
+
+* **Explicit Queries:** Favor `select()` constructs executed via `session.execute()` for transparency and control. Permit ORM query chains with `.filter()` for simple cases, but eschew overly magical or opaque patterns that obscure intent.
+
+* **Prevent N+1 Queries:** Mandate eager loading via `selectinload()` or explicit `JOIN` clauses whenever relationships are accessed. Treat any detected N+1 scenario as a critical defect requiring immediate refactoring.
+
+* **Transactions:** Enclose multi-operation workflows within `async with session.begin():` contexts to guarantee atomic commits and automatic rollbacks on failure.
+
+* **Fallback to Raw SQL:** Resort to `text()` constructs or SQLAlchemy Core expressions with bound parameters when ORM queries grow complex, unreadable, or performance-intensive—prioritizing clarity and efficiency.
+
+* **No ORM in Responses:** Always map query results to Pydantic data transfer objects before returning them. Confine ORM instances to the data access layer to decouple persistence from presentation.
+
+* **Schema Discipline:** Govern database evolution through Alembic migrations for versioned, reversible changes—eschew `Base.metadata.create_all()` in production to prevent schema drift.
+
+* **Performance Hygiene:** Index columns pivotal to WHERE, ORDER BY, and JOIN clauses; routinely profile with `EXPLAIN ANALYZE` to validate query efficiency under load.
+
+-----
+
+## 🤖 Transformers (Vision & Image Models)
+
+* **Dependency Setup:** Rely on `transformers`, `torch`, and `Pillow` for core functionality, plus `python-multipart` for uploads. Pin versions in `requirements.txt` to avoid breaking changes.
+* **Model Loading Protocol:** Perform all pipeline initializations (e.g., BLIP for captioning, CLIP for embeddings) exclusively during `lifespan` startup. This amortizes the high upfront cost (seconds to minutes) across all requests, storing instances in `app.state`.
+* **Inference Offloading:** Treat model forward passes as CPU/GPU-bound tasks: never invoke them directly in async routes. Delegate to `run_in_threadpool` for parallel execution, preserving the event loop for concurrency.
+* **Input Preprocessing:** Convert uploaded bytes to PIL Images via `io.BytesIO` streams, resizing or normalizing only as needed to cut computation time. Validate formats early to reject invalids without loading.
+* **Output Handling:** For captions, extract the primary generated text from pipeline results. For vectors, flatten tensors to lists post-inference, capping dimensions if storage constrains apply.
+* **Resource Stewardship:** Monitor GPU memory via `torch.cuda` if applicable, falling back to CPU for low-load scenarios. Implement timeouts on threadpool tasks to prevent hangs, and unload models on shutdown to free VRAM.
+* **Batching for Scale:** When serving multiple images, accumulate requests in a queue and process in batches via pipeline's batch mode, trading latency for throughput under high demand.
+* **Caching Layers:** Memoize frequent embeddings with an in-memory LRU cache (e.g., via `functools.lru_cache` on hashable inputs) to skip redundant computations, evicting based on TTL for freshness.
+
+-----
+
+## 🔒 Security and Observability
+
+* **Input Sanitization:** Enforce rate limiting per IP/endpoint with middleware. Hash sensitive fields before storage.
+* **Logging Standards:** Use `structlog` for structured logs with correlation IDs, capturing request traces, errors, and metrics (e.g., inference latency) without exposing PII.
+* **Monitoring Integration:** Expose Prometheus metrics for endpoint latencies and error rates. Set up health checks (`/health`) querying pool status and model readiness.
+
+These rules promote code that starts fast, scales gracefully, and remains intuitive under maintenance.

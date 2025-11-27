@@ -4,10 +4,10 @@
 set -e
 
 # Amazon Linux defaults
-APP_DIR="/home/ec2-user/findora/backend"
+APP_DIR="/home/ec2-user/laf/backend"
 VENV_DIR="$APP_DIR/venv"
 USER="ec2-user"
-SERVICE_NAME="findora"
+SERVICE_NAME="laf"
 
 echo "--- Starting Setup for Amazon Linux ---"
 
@@ -20,7 +20,7 @@ sudo dnf install -y python3 python3-devel git gcc postgresql-devel acl
 # 2. Navigate to App Directory
 if [ ! -d "$APP_DIR" ]; then
     echo "Error: Directory $APP_DIR does not exist."
-    echo "Please upload your code to /home/ec2-user/findora first."
+    echo "Please upload your code to /home/ec2-user/laf first."
     exit 1
 fi
 cd "$APP_DIR"
@@ -42,7 +42,7 @@ pip install gunicorn uvloop httptools
 echo "--- Creating Systemd Service ---"
 sudo bash -c "cat > /etc/systemd/system/$SERVICE_NAME.service" <<EOL
 [Unit]
-Description=Gunicorn instance to serve Findora Backend
+Description=Gunicorn instance to serve LAF Backend
 After=network.target
 
 [Service]

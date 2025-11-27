@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=60, alias="JWT_ACCESS_EXP_MINUTES")
     refresh_token_expire_minutes: int = Field(default=60 * 24 * 7, alias="JWT_REFRESH_EXP_MINUTES")
 
-    clip_model_name: str = Field(default="sentence-transformers/clip-ViT-L-14", alias="CLIP_MODEL_NAME")
+    clip_model_name: str = Field(default="sentence-transformers/clip-ViT-B-16", alias="CLIP_MODEL_NAME")
     text_embedding_model_name: str = Field(
         default="sentence-transformers/all-MiniLM-L6-v2", alias="TEXT_EMBEDDING_MODEL_NAME"
     )

@@ -12,6 +12,7 @@ import smtplib
 from app.config.logging import get_logger
 from app.config.settings import get_settings
 from app.models import Item, Match, User
+from app.utils.email_templates import get_email_html
 
 logger = get_logger(name="notifications")
 settings = get_settings()
@@ -93,10 +94,6 @@ async def _send_email(subject: str, html_body: str, recipients: list[str]) -> No
 
 
 def _format_match_summary(match: Match, lost_item: Item, found_item: Item) -> str:
-    image_fragment = ""
-    if found_item.image_url:
-        image_fragment = f'<p><strong>Found Item Image:</strong><br><img src="{found_item.image_url}" alt="Found item image" style="max-width: 320px;"/></p>'
-
     return f"""
         <h2>Match Confidence: {match.confidence_score:.2%}</h2>
         <h3>Lost Item</h3>
@@ -105,7 +102,6 @@ def _format_match_summary(match: Match, lost_item: Item, found_item: Item) -> st
         <h3>Found Item</h3>
         <p><strong>Description:</strong> {found_item.description}</p>
         <p><strong>Location Found:</strong> {found_item.location}</p>
-        {image_fragment}
     """
 
 
@@ -120,22 +116,37 @@ async def notify_match_created(*, match: Match, lost_item: Item, found_item: Ite
 
     summary_html = _format_match_summary(match, lost_item, found_item)
 
-    loser_body = f"""
+    # Resolve image URL
+    image_url = None
+    if found_item.image_url:
+        # Ensure we have a full URL
+        if found_item.image_url.startswith("http"):
+            image_url = found_item.image_url
+        else:
+            # Remove leading slash if present to avoid double slashes when joining
+            path = found_item.image_url.lstrip("/")
+            image_url = f"{settings.backend_base_url}/{path}"
+
+    loser_content = f"""
         <p>Hi {loser.name if loser else "there"},</p>
         <p>We think we may have found your lost item. Review the details below and approve the match from your dashboard.</p>
         {summary_html}
         <p>Please sign in to the Lost & Found portal to accept or reject this match.</p>
     """
-    finder_body = f"""
+    
+    finder_content = f"""
         <p>Hi {finder.name if finder else settings.admin_office_name},</p>
         <p>Your reported item might belong to someone. Once they approve the match, we will share their contact information.</p>
         {summary_html}
         <p>No action needed yet. We will notify you when the owner confirms the match.</p>
     """
 
+    loser_html = get_email_html("Potential match found for your lost item", loser_content, image_url)
+    finder_html = get_email_html("Item match awaiting confirmation", finder_content, image_url)
+
     await asyncio.gather(
-        _send_email("Potential match found for your lost item", loser_body, [loser_email]),
-        _send_email("Item match awaiting confirmation", finder_body, [finder_email]),
+        _send_email("Potential match found for your lost item", loser_html, [loser_email]),
+        _send_email("Item match awaiting confirmation", finder_html, [finder_email]),
     )
 
 
@@ -174,9 +185,12 @@ async def notify_match_resolution(
     """
 
     # Prepare list of email tasks
+    loser_html = get_email_html("Your lost item has been found!", loser_body)
+    finder_html = get_email_html("Lost & Found match confirmed", finder_body)
+
     email_tasks = [
-        _send_email("Your lost item has been found!", loser_body, [loser_email]),
-        _send_email("Lost & Found match confirmed", finder_body, [finder_email]),
+        _send_email("Your lost item has been found!", loser_html, [loser_email]),
+        _send_email("Lost & Found match confirmed", finder_html, [finder_email]),
     ]
 
     # Send email to admin if found item was reported by admin
@@ -185,6 +199,15 @@ async def notify_match_resolution(
         found_item = match.found_item
         
         summary_html = _format_match_summary(match, lost_item, found_item)
+        
+        # Resolve image URL for admin email too
+        image_url = None
+        if found_item.image_url:
+            if found_item.image_url.startswith("http"):
+                image_url = found_item.image_url
+            else:
+                path = found_item.image_url.lstrip("/")
+                image_url = f"{settings.backend_base_url}/{path}"
         
         admin_body = f"""
             <p>Hi {settings.admin_office_name},</p>
@@ -206,8 +229,10 @@ async def notify_match_resolution(
             <p>The match has been approved and both parties have been notified. They will coordinate directly to arrange pickup.</p>
         """
         
+        admin_html = get_email_html("Match approved for admin-reported found item", admin_body, image_url)
+        
         email_tasks.append(
-            _send_email("Match approved for admin-reported found item", admin_body, [settings.admin_office_email])
+            _send_email("Match approved for admin-reported found item", admin_html, [settings.admin_office_email])
         )
 
     await asyncio.gather(*email_tasks)

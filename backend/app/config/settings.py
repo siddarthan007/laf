@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     backend_cors_origins: list[str] = Field(
         default=["http://localhost:5173", "http://localhost:3000"], alias="BACKEND_CORS_ORIGINS"
     )
+    backend_base_url: str = Field(default="http://localhost:8000", alias="BACKEND_BASE_URL")
+    frontend_base_url: str = Field(default="http://localhost:5173", alias="FRONTEND_BASE_URL")
 
     database_url: str = Field(
         default="postgresql+psycopg://postgres:postgres@localhost:5432/lostfound",

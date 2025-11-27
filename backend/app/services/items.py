@@ -53,12 +53,11 @@ async def _persist_item(
 
     image_url: str | None = None
     if payload.image_file is not None and image_bytes is not None:
-        stored_path = await save_upload_file(
+        image_url = await save_upload_file(
             payload.image_file,
             settings.static_upload_dir,
             file_bytes=image_bytes,
         )
-        image_url = f"/{stored_path.as_posix()}"
 
     item = Item(
         reported_by_user_id=reporter.id,

@@ -43,8 +43,8 @@ class Item(Base):
     image_url: Mapped[str | None] = mapped_column(String(length=512), nullable=True)
 
     description_vector: Mapped[list[float]] = mapped_column(Vector(384), nullable=False)
-    description_clip_vector: Mapped[list[float]] = mapped_column(Vector(768), nullable=False)
-    image_vector: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
+    description_clip_vector: Mapped[list[float]] = mapped_column(Vector(512), nullable=False)
+    image_vector: Mapped[list[float] | None] = mapped_column(Vector(512), nullable=True)
 
     __table_args__ = (
         # HNSW indices for vector similarity search are defined in Alembic migrations

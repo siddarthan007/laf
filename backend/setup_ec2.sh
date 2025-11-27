@@ -37,6 +37,8 @@ python3.11 -m venv "$VENV_DIR"
 echo "--- Installing Python Dependencies ---"
 source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
+# Install CPU-only torch first to avoid downloading CUDA libs
+pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install .
 pip install gunicorn uvloop httptools
 

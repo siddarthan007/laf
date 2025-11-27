@@ -42,7 +42,7 @@
 <div class="min-h-screen flex flex-col relative overflow-hidden">
 	<!-- Floating Navbar -->
 	<div class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center">
-		<nav class="glass rounded-2xl w-full max-w-7xl px-4 py-3 flex items-center justify-between transition-all duration-300 hover:shadow-xl hover:bg-card/70">
+		<nav class="glass rounded-2xl w-full max-w-7xl px-4 py-3 flex items-center justify-between transition-all duration-300 hover:shadow-xl hover:bg-card/95">
 			<div class="flex items-center gap-2 sm:gap-4 md:gap-8">
 				<!-- Mobile Menu Button -->
 				<Button

@@ -16,7 +16,7 @@
 
 	$effect(() => {
 		if (!authStore.initialized) return;
-		const isAuthPage = $page.url.pathname === '/login' || $page.url.pathname === '/register';
+		const isAuthPage = $page.url.pathname === '/login' || $page.url.pathname === '/register' || $page.url.pathname === '/';
 		if (!authStore.isAuthenticated && !isAuthPage) {
 			goto('/login');
 		} else if (authStore.isAuthenticated && isAuthPage) {

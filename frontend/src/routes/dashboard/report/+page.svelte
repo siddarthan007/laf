@@ -14,6 +14,7 @@
 	import { toast } from 'svelte-sonner';
 	import { Tooltip, TooltipContent, TooltipTrigger } from '$lib/components/ui/tooltip';
 	import { Info } from '@lucide/svelte';
+	import { fade, fly } from 'svelte/transition';
 
 	const LOCATIONS = [
 		'Cafeteria',
@@ -173,272 +174,173 @@
 	}
 </script>
 
-<div class="max-w-2xl mx-auto space-y-8 px-4">
-	<div class="space-y-2">
-		<h1 class="text-3xl md:text-4xl font-bold tracking-tight">Report Item</h1>
-		<p class="text-muted-foreground text-lg">Report a lost or found item</p>
+<div class="max-w-2xl mx-auto space-y-8 px-4 pb-12" in:fade={{ duration: 300 }}>
+	<div class="space-y-2 text-center sm:text-left">
+		<h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600 inline-block">Report Item</h1>
+		<p class="text-muted-foreground text-lg">Help us connect lost items with their owners</p>
 	</div>
 
-	<Card class="shadow-lg border-2">
-		<CardHeader>
-			<CardTitle class="text-xl">Item Details</CardTitle>
-			<CardDescription class="text-base">Provide information about the item</CardDescription>
-		</CardHeader>
-		<CardContent>
-			<Tabs bind:value={activeTab}>
-				<TabsList class="grid w-full grid-cols-2">
-					<TabsTrigger value="lost">Lost Item</TabsTrigger>
-					<TabsTrigger value="found">Found Item</TabsTrigger>
+	<div class="glass rounded-3xl p-1 shadow-xl border border-white/20" in:fly={{ y: 20, duration: 500, delay: 100 }}>
+		<div class="bg-card/50 backdrop-blur-sm rounded-[1.4rem] p-6 sm:p-8">
+			<Tabs bind:value={activeTab} class="w-full">
+				<TabsList class="grid w-full grid-cols-2 mb-8 p-1 bg-muted/50 rounded-xl">
+					<TabsTrigger value="lost" class="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-300">Lost Item</TabsTrigger>
+					<TabsTrigger value="found" class="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-300">Found Item</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="lost" class="space-y-4 mt-4">
+				<div class="space-y-6">
 					{#if error}
-						<div class="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-							<AlertCircle class="h-4 w-4" />
-							<span>{error}</span>
+						<div class="flex items-center gap-3 p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl" transition:fly={{ y: -10, duration: 200 }}>
+							<AlertCircle class="h-5 w-5 flex-shrink-0" />
+							<span class="font-medium">{error}</span>
 						</div>
 					{/if}
 
 					{#if success}
-						<div class="space-y-2">
-							<div class="flex items-center gap-2 p-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-md">
-								<CheckCircle2 class="h-4 w-4" />
-								<span>Item reported successfully! Checking for matches...</span>
+						<div class="space-y-3" transition:fly={{ y: -10, duration: 200 }}>
+							<div class="flex items-center gap-3 p-4 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 rounded-xl">
+								<CheckCircle2 class="h-5 w-5 flex-shrink-0" />
+								<span class="font-medium">Item reported successfully! Checking for matches...</span>
 							</div>
 							{#if matchesFound !== null && matchesFound > 0}
-								<div class="flex items-center gap-2 p-3 text-sm text-primary bg-primary/10 rounded-md">
-									<CheckCircle2 class="h-4 w-4" />
-									<span>Found {matchesFound} potential match{matchesFound !== 1 ? 'es' : ''}! Check your matches page.</span>
+								<div class="flex items-center gap-3 p-4 text-sm text-primary bg-primary/10 border border-primary/20 rounded-xl" transition:fly={{ y: 10, duration: 300 }}>
+									<CheckCircle2 class="h-5 w-5 flex-shrink-0" />
+									<span class="font-medium">Found {matchesFound} potential match{matchesFound !== 1 ? 'es' : ''}! Check your matches page.</span>
 								</div>
 							{:else if matchesFound === 0}
-								<div class="flex items-center gap-2 p-3 text-sm text-muted-foreground bg-muted rounded-md">
-									<AlertCircle class="h-4 w-4" />
+								<div class="flex items-center gap-3 p-4 text-sm text-muted-foreground bg-muted/50 border border-border rounded-xl" transition:fly={{ y: 10, duration: 300 }}>
+									<AlertCircle class="h-5 w-5 flex-shrink-0" />
 									<span>No matches found yet. We'll notify you if any potential matches are found.</span>
 								</div>
 							{/if}
 						</div>
 					{/if}
 
-					<div class="space-y-2">
-						<Label for="description-lost" class="flex items-center gap-2">
-							Description *
-							<Tooltip>
-								<TooltipTrigger>
-									<Info class="h-3 w-3 text-muted-foreground" />
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Provide a detailed description to help others identify your item</p>
-								</TooltipContent>
-							</Tooltip>
-						</Label>
-						<Textarea
-							id="description-lost"
-							placeholder="Describe the item (e.g., Black leather wallet with ID card)"
-							bind:value={description}
-							disabled={loading}
-							required
-							rows={4}
-						/>
-					</div>
-
-					<div class="space-y-2">
-						<Label for="location-lost">Location *</Label>
-						<Select
-							type="single"
-							bind:value={location}
-						>
-							<SelectTrigger>
-								{location || 'Select location'}
-							</SelectTrigger>
-							<SelectContent>
-								{#each LOCATIONS as loc}
-									<SelectItem value={loc}>{loc}</SelectItem>
-								{/each}
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div class="space-y-2">
-						<Label for="image-lost" class="flex items-center gap-2">
-							Image (Optional)
-							<Tooltip>
-								<TooltipTrigger>
-									<Info class="h-3 w-3 text-muted-foreground" />
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Adding an image increases the chance of finding your item</p>
-								</TooltipContent>
-							</Tooltip>
-						</Label>
-						{#if imagePreview}
-							<div class="relative bg-muted rounded-md overflow-hidden">
-								<img src={imagePreview} alt="Preview" class="w-full h-64 object-contain rounded-md" />
-								<Button
-									type="button"
-									variant="destructive"
-									size="icon"
-									class="absolute top-2 right-2"
-									onclick={removeImage}
-								>
-									<X class="h-4 w-4" />
-								</Button>
-							</div>
-						{:else}
-							<div
-								class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors {isDragging
-									? 'border-primary bg-primary/10'
-									: 'border-muted-foreground/25 hover:bg-muted/50'}"
-								onclick={() => triggerFileInput('lost')}
-								ondragover={handleDragOver}
-								ondragleave={handleDragLeave}
-								ondrop={handleDrop}
-							>
-								<Upload class="h-8 w-8 text-muted-foreground mb-2" />
-								<span class="text-sm text-muted-foreground">Click to upload or drag and drop</span>
-								<input
-									bind:this={fileInputLost}
-									id="image-input-lost"
-									type="file"
-									accept="image/*"
-									class="hidden"
-									onchange={handleImageSelect}
-									disabled={loading}
-								/>
-							</div>
-						{/if}
-						<p class="text-xs text-muted-foreground">JPEG, PNG, or WebP (max 5MB)</p>
-					</div>
-
-					<Button type="button" class="w-full" onclick={handleSubmit} disabled={loading}>
-						{loading ? 'Reporting...' : 'Report Lost Item'}
-					</Button>
-				</TabsContent>
-
-				<TabsContent value="found" class="space-y-4 mt-4">
-					{#if error}
-						<div class="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-							<AlertCircle class="h-4 w-4" />
-							<span>{error}</span>
-						</div>
-					{/if}
-
-					{#if success}
+					<div class="space-y-4">
 						<div class="space-y-2">
-							<div class="flex items-center gap-2 p-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-md">
-								<CheckCircle2 class="h-4 w-4" />
-								<span>Item reported successfully! Checking for matches...</span>
-							</div>
-							{#if matchesFound !== null && matchesFound > 0}
-								<div class="flex items-center gap-2 p-3 text-sm text-primary bg-primary/10 rounded-md">
-									<CheckCircle2 class="h-4 w-4" />
-									<span>Found {matchesFound} potential match{matchesFound !== 1 ? 'es' : ''}! Check your matches page.</span>
+							<Label for="description-{activeTab}" class="flex items-center gap-2 text-base font-medium">
+								Description <span class="text-destructive">*</span>
+								<Tooltip>
+									<TooltipTrigger>
+										<Info class="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Provide a detailed description to help others identify your item</p>
+									</TooltipContent>
+								</Tooltip>
+							</Label>
+							<Textarea
+								id="description-{activeTab}"
+								placeholder={activeTab === 'lost' ? "E.g., Black leather wallet with ID card..." : "E.g., Black wallet found near library..."}
+								bind:value={description}
+								disabled={loading}
+								required
+								rows={4}
+								class="resize-none bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all"
+							/>
+						</div>
+
+						<div class="space-y-2">
+							<Label for="location-{activeTab}" class="text-base font-medium">Location <span class="text-destructive">*</span></Label>
+							<Select type="single" bind:value={location}>
+								<SelectTrigger class="bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all">
+									{location || 'Select location'}
+								</SelectTrigger>
+								<SelectContent>
+									{#each LOCATIONS as loc}
+										<SelectItem value={loc}>{loc}</SelectItem>
+									{/each}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div class="space-y-2">
+							<Label for="image-{activeTab}" class="flex items-center gap-2 text-base font-medium">
+								Image {activeTab === 'found' ? '' : '(Optional)'} <span class={activeTab === 'found' ? 'text-destructive' : 'hidden'}>*</span>
+								<Tooltip>
+									<TooltipTrigger>
+										<Info class="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Adding an image significantly increases the chance of finding a match</p>
+									</TooltipContent>
+								</Tooltip>
+							</Label>
+							
+							{#if imagePreview}
+								<div class="relative bg-muted/30 rounded-xl overflow-hidden border border-border/50 group" transition:fade>
+									<img src={imagePreview} alt="Preview" class="w-full h-64 object-contain" />
+									<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+										<Button
+											type="button"
+											variant="destructive"
+											size="sm"
+											class="rounded-full"
+											onclick={removeImage}
+										>
+											<X class="h-4 w-4 mr-2" /> Remove Image
+										</Button>
+									</div>
 								</div>
-							{:else if matchesFound === 0}
-								<div class="flex items-center gap-2 p-3 text-sm text-muted-foreground bg-muted rounded-md">
-									<AlertCircle class="h-4 w-4" />
-									<span>No matches found yet. We'll notify you if any potential matches are found.</span>
+							{:else}
+								<div
+									class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 {isDragging
+										? 'border-primary bg-primary/5 scale-[1.02]'
+										: 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/30'}"
+									onclick={() => triggerFileInput(activeTab)}
+									ondragover={handleDragOver}
+									ondragleave={handleDragLeave}
+									ondrop={handleDrop}
+									role="button"
+									tabindex="0"
+									onkeydown={(e) => e.key === 'Enter' && triggerFileInput(activeTab)}
+								>
+									<div class="p-4 rounded-full bg-primary/10 mb-3 group-hover:scale-110 transition-transform">
+										<Upload class="h-6 w-6 text-primary" />
+									</div>
+									<span class="text-sm font-medium text-foreground">Click to upload or drag and drop</span>
+									<span class="text-xs text-muted-foreground mt-1">JPEG, PNG, or WebP (max 5MB)</span>
+									{#if activeTab === 'lost'}
+									<input
+										bind:this={fileInputLost}
+										id="image-input-lost"
+										type="file"
+										accept="image/*"
+										class="hidden"
+										onchange={handleImageSelect}
+										disabled={loading}
+									/>
+								{:else}
+									<input
+										bind:this={fileInputFound}
+										id="image-input-found"
+										type="file"
+										accept="image/*"
+										class="hidden"
+										onchange={handleImageSelect}
+										disabled={loading}
+										required
+									/>
+								{/if}
 								</div>
 							{/if}
 						</div>
-					{/if}
-
-					<div class="space-y-2">
-						<Label for="description-found" class="flex items-center gap-2">
-							Description *
-							<Tooltip>
-								<TooltipTrigger>
-									<Info class="h-3 w-3 text-muted-foreground" />
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Describe what you found to help the owner identify it</p>
-								</TooltipContent>
-							</Tooltip>
-						</Label>
-						<Textarea
-							id="description-found"
-							placeholder="Describe the item (e.g., Black wallet found)"
-							bind:value={description}
-							disabled={loading}
-							required
-							rows={4}
-						/>
 					</div>
 
-					<div class="space-y-2">
-						<Label for="location-found">Location *</Label>
-						<Select
-							type="single"
-							bind:value={location}
-						>
-							<SelectTrigger>
-								{location || 'Select location'}
-							</SelectTrigger>
-							<SelectContent>
-								{#each LOCATIONS as loc}
-									<SelectItem value={loc}>{loc}</SelectItem>
-								{/each}
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div class="space-y-2">
-						<Label for="image-found" class="flex items-center gap-2">
-							Image *
-							<Tooltip>
-								<TooltipTrigger>
-									<Info class="h-3 w-3 text-muted-foreground" />
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Image is required for found items to help verify matches</p>
-								</TooltipContent>
-							</Tooltip>
-						</Label>
-						{#if imagePreview}
-							<div class="relative bg-muted rounded-md overflow-hidden">
-								<img src={imagePreview} alt="Preview" class="w-full h-64 object-contain rounded-md" />
-								<Button
-									type="button"
-									variant="destructive"
-									size="icon"
-									class="absolute top-2 right-2"
-									onclick={removeImage}
-								>
-									<X class="h-4 w-4" />
-								</Button>
-							</div>
+					<Button 
+						type="button" 
+						class="w-full h-12 text-base font-medium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5" 
+						onclick={handleSubmit} 
+						disabled={loading}
+					>
+						{#if loading}
+							<span class="animate-pulse">Processing...</span>
 						{:else}
-							<div
-								class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors {isDragging
-									? 'border-primary bg-primary/10'
-									: 'border-muted-foreground/25 hover:bg-muted/50'}"
-								onclick={() => triggerFileInput('found')}
-								ondragover={handleDragOver}
-								ondragleave={handleDragLeave}
-								ondrop={handleDrop}
-							>
-								<Upload class="h-8 w-8 text-muted-foreground mb-2" />
-								<span class="text-sm text-muted-foreground">Click to upload or drag and drop (Required)</span>
-								<input
-									bind:this={fileInputFound}
-									id="image-input-found"
-									type="file"
-									accept="image/*"
-									class="hidden"
-									onchange={handleImageSelect}
-									disabled={loading}
-									required
-								/>
-							</div>
+							{activeTab === 'lost' ? 'Report Lost Item' : 'Report Found Item'}
 						{/if}
-						<p class="text-xs text-muted-foreground">JPEG, PNG, or WebP (max 5MB)</p>
-					</div>
-
-					<Button type="button" class="w-full" onclick={handleSubmit} disabled={loading}>
-						{loading ? 'Reporting...' : 'Report Found Item'}
 					</Button>
-				</TabsContent>
+				</div>
 			</Tabs>
-		</CardContent>
-	</Card>
+		</div>
+	</div>
 </div>
-

@@ -4,7 +4,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Tooltip, TooltipContent, TooltipTrigger } from '$lib/components/ui/tooltip';
-	import { Search, FileQuestion, CheckCircle, Package, Info } from "@lucide/svelte";
+	import { Search, FileQuestion, CheckCircle, Package, Info, ArrowRight, Sparkles } from "@lucide/svelte";
 	import { getAllFoundItems, searchItems } from '$lib/api/items';
 	import { getMyMatches } from '$lib/api/matches';
 	import { getImageUrl } from '$lib/api/config';
@@ -16,6 +16,8 @@
 	import { getUserContext } from '$lib/contexts/user.svelte';
 	import { onDestroy } from 'svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { triggerMatchConfetti } from '$lib/utils/confetti';
 
 	const userContext = getUserContext();
 
@@ -62,6 +64,7 @@
 				
 				if (newlyCreatedMatches.length > 0) {
 					matches = newMatches;
+					triggerMatchConfetti();
 					toast.info(`New match${newlyCreatedMatches.length !== 1 ? 'es' : ''} found!`, {
 						description: `${newlyCreatedMatches.length} potential match${newlyCreatedMatches.length !== 1 ? 'es' : ''} ${newlyCreatedMatches.length !== 1 ? 'are' : 'is'} waiting for your review.`,
 						duration: 5000
@@ -106,220 +109,221 @@
 	}
 </script>
 
-<div class="space-y-4 sm:space-y-6 md:space-y-8">
-	<div class="space-y-1 sm:space-y-2">
-		<h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">Dashboard</h1>
-		<p class="text-muted-foreground text-sm sm:text-base md:text-lg">Welcome back! Here's what's happening.</p>
-	</div>
-
-	<div class="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-		<Card class="hover:shadow-lg transition-shadow duration-200">
-			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle class="text-sm font-medium flex items-center gap-2">
-					Found Items
-					<Tooltip>
-						<TooltipTrigger>
-							<Info class="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Recently found items available for matching</p>
-						</TooltipContent>
-					</Tooltip>
-				</CardTitle>
-				<Package class="h-5 w-5 text-primary" />
-			</CardHeader>
-			<CardContent>
-				{#if loading}
-					<Skeleton class="h-8 w-16 mb-2" />
-				{:else}
-					<div class="text-3xl font-bold">{foundItems.length}</div>
-				{/if}
-				<p class="text-sm text-muted-foreground mt-1">Recently found items</p>
-			</CardContent>
-		</Card>
-
-		<Card class="hover:shadow-lg transition-shadow duration-200">
-			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle class="text-sm font-medium flex items-center gap-2">
-					Pending Matches
-					<Tooltip>
-						<TooltipTrigger>
-							<Info class="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Matches waiting for your approval</p>
-						</TooltipContent>
-					</Tooltip>
-				</CardTitle>
-				<CheckCircle class="h-5 w-5 text-amber-500" />
-			</CardHeader>
-			<CardContent>
-				{#if loading}
-					<Skeleton class="h-8 w-16 mb-2" />
-				{:else}
-					<div class="text-3xl font-bold">{matches.filter((m) => m.match_status === 'PENDING').length}</div>
-				{/if}
-				<p class="text-sm text-muted-foreground mt-1">Awaiting your review</p>
-			</CardContent>
-		</Card>
-
-		<Card class="hover:shadow-lg transition-shadow duration-200">
-			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle class="text-sm font-medium flex items-center gap-2">
-					Approved Matches
-					<Tooltip>
-						<TooltipTrigger>
-							<Info class="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Successfully matched items</p>
-						</TooltipContent>
-					</Tooltip>
-				</CardTitle>
-				<CheckCircle class="h-5 w-5 text-green-500" />
-			</CardHeader>
-			<CardContent>
-				{#if loading}
-					<Skeleton class="h-8 w-16 mb-2" />
-				{:else}
-					<div class="text-3xl font-bold">
-						{matches.filter((m) => m.match_status === 'APPROVED').length}
-					</div>
-				{/if}
-				<p class="text-sm text-muted-foreground mt-1">Successfully matched</p>
-			</CardContent>
-		</Card>
-
-		<Card class="hover:shadow-lg transition-shadow duration-200">
-			<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle class="text-sm font-medium">Quick Actions</CardTitle>
-				<FileQuestion class="h-5 w-5 text-primary" />
-			</CardHeader>
-			<CardContent>
-				<Button class="w-full" onclick={() => goto('/dashboard/report')}>
-					Report Item
+<div class="space-y-8 pb-12">
+	<!-- Welcome Section -->
+	<div class="relative overflow-hidden rounded-3xl glass p-8 sm:p-12" in:fade={{ duration: 500 }}>
+		<div class="relative z-10 max-w-2xl">
+			<h1 class="text-4xl sm:text-5xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+				Welcome back, {userContext.user?.name?.split(' ')[0] || 'User'}!
+			</h1>
+			<p class="text-lg text-muted-foreground mb-8 leading-relaxed">
+				Here's what's happening with your lost and found items. We're constantly scanning for matches to help you recover what's yours.
+			</p>
+			<div class="flex flex-wrap gap-4">
+				<Button size="lg" class="rounded-full px-8 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5" onclick={() => goto('/dashboard/report')}>
+					<FileQuestion class="mr-2 h-5 w-5" />
+					Report Lost Item
 				</Button>
-			</CardContent>
-		</Card>
+				<Button variant="outline" size="lg" class="rounded-full px-8 border-primary/20 hover:bg-primary/5" onclick={() => goto('/dashboard/found')}>
+					<Search class="mr-2 h-5 w-5" />
+					Browse Found
+				</Button>
+			</div>
+		</div>
+		
+		<!-- Decorative Background Elements -->
+		<div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+		<div class="absolute bottom-0 right-20 -mb-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
 	</div>
 
-	<div class="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 lg:grid-cols-2">
-		<Card class="hover:shadow-lg transition-shadow duration-200">
-			<CardHeader>
-				<CardTitle class="text-xl">Recent Found Items</CardTitle>
-				<CardDescription class="text-base">Latest items reported as found</CardDescription>
-			</CardHeader>
-			<CardContent>
+	<!-- Stats Grid -->
+	<div class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+		<div class="card-premium group cursor-pointer" onclick={() => goto('/dashboard/found')}>
+			<div class="flex justify-between items-start mb-4">
+				<div class="p-3 rounded-2xl bg-blue-500/10 text-blue-600 group-hover:bg-blue-500/20 transition-colors">
+					<Package class="h-6 w-6" />
+				</div>
+				<Badge variant="outline" class="bg-white/50 backdrop-blur-sm">Live</Badge>
+			</div>
+			<div class="space-y-1">
+				<h3 class="text-3xl font-bold tracking-tight">
+					{#if loading}<Skeleton class="h-8 w-16 inline-block" />{:else}{foundItems.length}{/if}
+				</h3>
+				<p class="text-sm text-muted-foreground font-medium">Found Items</p>
+			</div>
+		</div>
+
+		<div class="card-premium group cursor-pointer" onclick={() => goto('/dashboard/matches')}>
+			<div class="flex justify-between items-start mb-4">
+				<div class="p-3 rounded-2xl bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 transition-colors">
+					<Sparkles class="h-6 w-6" />
+				</div>
+				{#if !loading && matches.filter((m) => m.match_status === 'PENDING').length > 0}
+					<span class="relative flex h-3 w-3">
+					  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+					  <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+					</span>
+				{/if}
+			</div>
+			<div class="space-y-1">
+				<h3 class="text-3xl font-bold tracking-tight">
+					{#if loading}<Skeleton class="h-8 w-16 inline-block" />{:else}{matches.filter((m) => m.match_status === 'PENDING').length}{/if}
+				</h3>
+				<p class="text-sm text-muted-foreground font-medium">Pending Matches</p>
+			</div>
+		</div>
+
+		<div class="card-premium group cursor-pointer" onclick={() => goto('/dashboard/matches')}>
+			<div class="flex justify-between items-start mb-4">
+				<div class="p-3 rounded-2xl bg-green-500/10 text-green-600 group-hover:bg-green-500/20 transition-colors">
+					<CheckCircle class="h-6 w-6" />
+				</div>
+			</div>
+			<div class="space-y-1">
+				<h3 class="text-3xl font-bold tracking-tight">
+					{#if loading}<Skeleton class="h-8 w-16 inline-block" />{:else}{matches.filter((m) => m.match_status === 'APPROVED').length}{/if}
+				</h3>
+				<p class="text-sm text-muted-foreground font-medium">Approved Matches</p>
+			</div>
+		</div>
+
+		<div class="card-premium group cursor-pointer" onclick={() => goto('/dashboard/my-items')}>
+			<div class="flex justify-between items-start mb-4">
+				<div class="p-3 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+					<FileQuestion class="h-6 w-6" />
+				</div>
+			</div>
+			<div class="space-y-1">
+				<h3 class="text-3xl font-bold tracking-tight">
+					{#if loading}<Skeleton class="h-8 w-16 inline-block" />{:else}0{/if}
+				</h3>
+				<p class="text-sm text-muted-foreground font-medium">My Reports</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="grid gap-8 grid-cols-1 lg:grid-cols-2">
+		<!-- Recent Found Items -->
+		<div class="space-y-6">
+			<div class="flex items-center justify-between">
+				<h2 class="text-2xl font-bold tracking-tight">Recent Found Items</h2>
+				<Button variant="ghost" class="text-primary hover:text-primary/80 hover:bg-primary/5" onclick={() => goto('/dashboard/found')}>
+					View All <ArrowRight class="ml-2 h-4 w-4" />
+				</Button>
+			</div>
+			
+			<div class="space-y-4">
 				{#if loading}
-					<div class="space-y-4">
-						{#each Array(3) as _}
-							<div class="flex items-start gap-4 p-4">
-								<Skeleton class="w-16 h-16 rounded-md" />
-								<div class="flex-1 space-y-2">
-									<Skeleton class="h-4 w-3/4" />
-									<Skeleton class="h-3 w-1/2" />
-									<Skeleton class="h-3 w-1/3" />
-								</div>
-								<Skeleton class="h-6 w-16 rounded-full" />
+					{#each Array(3) as _}
+						<div class="glass rounded-2xl p-4 flex gap-4">
+							<Skeleton class="w-20 h-20 rounded-xl" />
+							<div class="flex-1 space-y-2 py-1">
+								<Skeleton class="h-5 w-3/4" />
+								<Skeleton class="h-4 w-1/2" />
 							</div>
-						{/each}
-					</div>
-				{:else if foundItems.length === 0}
-					<div class="text-center py-16">
-						<div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
-							<Package class="h-10 w-10 text-muted-foreground" />
 						</div>
-						<p class="text-muted-foreground font-semibold text-lg">No found items yet</p>
-						<p class="text-sm text-muted-foreground mt-2">Check back later for new items</p>
+					{/each}
+				{:else if foundItems.length === 0}
+					<div class="glass rounded-3xl p-12 text-center">
+						<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+							<Package class="h-8 w-8 text-muted-foreground" />
+						</div>
+						<h3 class="text-lg font-semibold">No items found yet</h3>
+						<p class="text-muted-foreground mt-1">Check back later for updates</p>
 					</div>
 				{:else}
-					<div class="space-y-3">
-						{#each foundItems as item}
-							<button
-								type="button"
-								class="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 hover:border-primary/20 active:bg-muted cursor-pointer transition-all duration-200 w-full text-left group touch-manipulation"
-								onclick={() => goto(`/dashboard/found`)}
-							>
+					{#each foundItems as item, i}
+						<div 
+							class="glass glass-hover rounded-2xl p-3 flex gap-4 cursor-pointer group"
+							in:fly={{ y: 20, delay: i * 50, duration: 400 }}
+							onclick={() => goto(`/dashboard/found`)}
+						>
+							<div class="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 border border-white/10">
 								{#if item.image_url}
-									<div class="w-12 h-12 sm:w-16 sm:h-16 bg-muted overflow-hidden rounded-md flex items-center justify-center flex-shrink-0">
-										<img
-											src={getImageUrl(item.image_url)}
-											alt={item.description}
-											class="max-w-full max-h-full object-contain"
-										/>
-									</div>
+									<img
+										src={getImageUrl(item.image_url)}
+										alt={item.description}
+										class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+									/>
 								{:else}
-									<div class="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-										<Package class="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+									<div class="w-full h-full flex items-center justify-center">
+										<Package class="h-8 w-8 text-muted-foreground/50" />
 									</div>
 								{/if}
-								<div class="flex-1 min-w-0">
-									<p class="font-medium truncate text-sm sm:text-base">{item.description}</p>
-									<p class="text-xs sm:text-sm text-muted-foreground">{item.location}</p>
-									<p class="text-xs text-muted-foreground mt-1">{formatDate(item.reported_at)}</p>
-								</div>
-								<Badge variant="secondary" class="text-xs flex-shrink-0">{item.status}</Badge>
-							</button>
-						{/each}
-					</div>
-					<Button variant="outline" class="w-full mt-4" onclick={() => goto('/dashboard/found')}>
-						View All Found Items
-					</Button>
-				{/if}
-			</CardContent>
-		</Card>
-
-		<Card class="hover:shadow-lg transition-shadow duration-200">
-			<CardHeader>
-				<CardTitle class="text-xl">Pending Matches</CardTitle>
-				<CardDescription class="text-base">Items that might match your lost items</CardDescription>
-			</CardHeader>
-			<CardContent>
-				{#if loading}
-					<div class="space-y-4">
-						{#each Array(2) as _}
-							<div class="p-4 space-y-3">
-								<Skeleton class="h-4 w-full" />
-								<Skeleton class="h-3 w-3/4" />
-								<Skeleton class="h-3 w-1/2" />
 							</div>
-						{/each}
-					</div>
-				{:else if matches.filter((m) => m.match_status === 'PENDING').length === 0}
-					<div class="text-center py-16">
-						<div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
-							<CheckCircle class="h-10 w-10 text-muted-foreground" />
+							<div class="flex-1 py-1 min-w-0">
+								<div class="flex items-start justify-between gap-2">
+									<h3 class="font-semibold truncate pr-2 group-hover:text-primary transition-colors">{item.description}</h3>
+									<Badge variant="secondary" class="bg-white/50 backdrop-blur-sm text-xs">{item.status}</Badge>
+								</div>
+								<p class="text-sm text-muted-foreground mt-1 truncate">{item.location}</p>
+								<p class="text-xs text-muted-foreground/70 mt-2">{formatDate(item.reported_at)}</p>
+							</div>
 						</div>
-						<p class="text-muted-foreground font-semibold text-lg">No pending matches</p>
-						<p class="text-sm text-muted-foreground mt-2">We'll notify you when matches are found</p>
+					{/each}
+				{/if}
+			</div>
+		</div>
+
+		<!-- Pending Matches -->
+		<div class="space-y-6">
+			<div class="flex items-center justify-between">
+				<h2 class="text-2xl font-bold tracking-tight">Potential Matches</h2>
+				<Button variant="ghost" class="text-primary hover:text-primary/80 hover:bg-primary/5" onclick={() => goto('/dashboard/matches')}>
+					View All <ArrowRight class="ml-2 h-4 w-4" />
+				</Button>
+			</div>
+
+			<div class="space-y-4">
+				{#if loading}
+					{#each Array(2) as _}
+						<div class="glass rounded-2xl p-6 space-y-4">
+							<Skeleton class="h-5 w-full" />
+							<Skeleton class="h-4 w-3/4" />
+						</div>
+					{/each}
+				{:else if matches.filter((m) => m.match_status === 'PENDING').length === 0}
+					<div class="glass rounded-3xl p-12 text-center">
+						<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+							<CheckCircle class="h-8 w-8 text-muted-foreground" />
+						</div>
+						<h3 class="text-lg font-semibold">All caught up!</h3>
+						<p class="text-muted-foreground mt-1">We'll notify you when we find a match</p>
 					</div>
 				{:else}
-					<div class="space-y-3">
-						{#each matches.filter((m) => m.match_status === 'PENDING') as match}
-							<button
-								type="button"
-								class="w-full p-4 border rounded-lg hover:bg-muted/50 hover:border-primary/20 cursor-pointer transition-all duration-200 text-left group"
-								onclick={() => goto('/dashboard/matches')}
-							>
-								<div class="flex items-start justify-between gap-4">
-									<div class="flex-1 min-w-0">
-										<p class="font-medium truncate">{match.lost_item.description}</p>
-										<p class="text-sm text-muted-foreground">Found: {match.found_item.description}</p>
-										<p class="text-xs text-muted-foreground mt-1">
-											Confidence: {(match.confidence_score * 100).toFixed(0)}%
-										</p>
-									</div>
-									<Badge variant="outline">{(match.confidence_score * 100).toFixed(0)}%</Badge>
+					{#each matches.filter((m) => m.match_status === 'PENDING') as match, i}
+						<div 
+							class="glass glass-hover rounded-2xl p-5 cursor-pointer group relative overflow-hidden"
+							in:fly={{ y: 20, delay: i * 50, duration: 400 }}
+							onclick={() => goto('/dashboard/matches')}
+						>
+							<div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+							
+							<div class="flex items-start justify-between gap-4 mb-3">
+								<div>
+									<h3 class="font-semibold text-lg group-hover:text-primary transition-colors">Match Found</h3>
+									<p class="text-sm text-muted-foreground">Confidence Score</p>
 								</div>
-							</button>
-						{/each}
-					</div>
-					<Button variant="outline" class="w-full mt-4" onclick={() => goto('/dashboard/matches')}>
-						View All Matches
-					</Button>
+								<div class="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full font-bold text-sm">
+									<Sparkles class="w-3 h-3" />
+									{(match.confidence_score * 100).toFixed(0)}%
+								</div>
+							</div>
+							
+							<div class="grid grid-cols-2 gap-4 text-sm">
+								<div class="p-3 rounded-xl bg-muted/50">
+									<p class="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Lost Item</p>
+									<p class="font-medium truncate">{match.lost_item.description}</p>
+								</div>
+								<div class="p-3 rounded-xl bg-muted/50">
+									<p class="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Found Item</p>
+									<p class="font-medium truncate">{match.found_item.description}</p>
+								</div>
+							</div>
+						</div>
+					{/each}
 				{/if}
-			</CardContent>
-		</Card>
+			</div>
+		</div>
 	</div>
 </div>
-

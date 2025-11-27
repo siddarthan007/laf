@@ -46,6 +46,10 @@ class Item(Base):
     description_clip_vector: Mapped[list[float]] = mapped_column(Vector(768), nullable=False)
     image_vector: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
 
+    __table_args__ = (
+        # HNSW indices for vector similarity search are defined in Alembic migrations
+    )
+
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     is_admin_report: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     has_match_found: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")

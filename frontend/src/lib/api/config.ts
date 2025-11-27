@@ -3,7 +3,8 @@
  * Centralized configuration for API base URL
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const rawUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const API_BASE_URL = rawUrl.replace(/\/+$/, '');
 
 /**
  * Get the full URL for a static asset (like uploaded images)
@@ -17,6 +18,7 @@ export function getImageUrl(imagePath: string | null | undefined): string {
 	// Otherwise, prepend the API base URL
 	return `${API_BASE_URL}${imagePath}`;
 }
+
 
 
 

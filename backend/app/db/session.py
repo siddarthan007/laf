@@ -15,7 +15,14 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 # Disable echo to prevent SQL query logging (too verbose)
 # Set echo=False to suppress SQL query output
-engine = create_async_engine(str(settings.database_url), echo=False)
+engine_args = {"echo": False, "pool_pre_ping": True}
+
+# Always apply SSL mode from settings
+engine_args["connect_args"] = {"sslmode": settings.database_ssl_mode}
+
+print(f"Database connection args: echo={engine_args.get('echo')}, sslmode={engine_args['connect_args']['sslmode']}")
+
+engine = create_async_engine(str(settings.database_url), **engine_args)
 async_session_factory = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 

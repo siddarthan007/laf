@@ -11,10 +11,11 @@
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { Home, Search, FileQuestion, CheckCircle, Settings, LogOut, Shield, Menu, X, Package } from "@lucide/svelte";
+	import { Home, Search, FileQuestion, CheckCircle, Settings, LogOut, Shield, Menu, X, Package, Sparkles } from "@lucide/svelte";
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { setUserContext } from '$lib/contexts/user.svelte';
+	import { fly, fade } from 'svelte/transition';
 
 	let { children } = $props();
 	let mobileMenuOpen = $state(false);
@@ -38,193 +39,210 @@
 	let currentPath = $derived($page.url.pathname);
 </script>
 
-<div class="min-h-screen bg-background">
-	<nav class="border-b bg-card/95 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-		<div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2 sm:gap-4 md:gap-8">
-					<!-- Mobile Menu Button - Before Logo -->
-					<Button
-						variant="ghost"
-						size="icon"
-						class="md:hidden touch-manipulation"
-						onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
-						aria-label="Toggle navigation menu"
-					>
-						{#if mobileMenuOpen}
-							<X class="h-5 w-5" />
-						{:else}
-							<Menu class="h-5 w-5" />
-						{/if}
-					</Button>
-					<!-- Logo -->
-					<a href="/dashboard" class="text-lg sm:text-xl md:text-2xl font-bold text-primary hover:text-primary/80 transition-colors tracking-tight">Findora</a>
-					<!-- Desktop Navigation -->
-					<div class="hidden md:flex items-center gap-1">
-						{#if authStore.isAdmin}
-							<a
-								href="/dashboard/admin"
-								class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {currentPath.startsWith('/dashboard/admin')
-									? 'bg-primary text-primary-foreground shadow-sm'
-									: 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}"
-							>
-								<Shield class="inline h-4 w-4 mr-2" />
-								Admin
-							</a>
-						{:else}
-							<a
-								href="/dashboard"
-								class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {currentPath === '/dashboard'
-									? 'bg-primary text-primary-foreground shadow-sm'
-									: 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}"
-							>
-								<Home class="inline h-4 w-4 mr-2" />
-								Dashboard
-							</a>
-							<a
-								href="/dashboard/found"
-								class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/found'
-									? 'bg-primary text-primary-foreground shadow-sm'
-									: 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}"
-							>
-								<Search class="inline h-4 w-4 mr-2" />
-								Browse Found
-							</a>
-							<a
-								href="/dashboard/report"
-								class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/report'
-									? 'bg-primary text-primary-foreground shadow-sm'
-									: 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}"
-							>
-								<FileQuestion class="inline h-4 w-4 mr-2" />
-								Report Item
-							</a>
-							<a
-								href="/dashboard/matches"
-								class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/matches'
-									? 'bg-primary text-primary-foreground shadow-sm'
-									: 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}"
-							>
-								<CheckCircle class="inline h-4 w-4 mr-2" />
-								My Matches
-							</a>
-							<a
-								href="/dashboard/my-items"
-								class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/my-items'
-									? 'bg-primary text-primary-foreground shadow-sm'
-									: 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}"
-							>
-								<Package class="inline h-4 w-4 mr-2" />
-								My Items
-							</a>
-						{/if}
+<div class="min-h-screen flex flex-col relative overflow-hidden">
+	<!-- Floating Navbar -->
+	<div class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center">
+		<nav class="glass rounded-2xl w-full max-w-7xl px-4 py-3 flex items-center justify-between transition-all duration-300 hover:shadow-xl hover:bg-card/70">
+			<div class="flex items-center gap-2 sm:gap-4 md:gap-8">
+				<!-- Mobile Menu Button -->
+				<Button
+					variant="ghost"
+					size="icon"
+					class="md:hidden touch-manipulation hover:bg-primary/10 hover:text-primary"
+					onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+					aria-label="Toggle navigation menu"
+				>
+					{#if mobileMenuOpen}
+						<X class="h-5 w-5" />
+					{:else}
+						<Menu class="h-5 w-5" />
+					{/if}
+				</Button>
+				
+				<!-- Logo -->
+				<a href="/dashboard" class="flex items-center gap-2 group">
+					<div class="bg-primary/10 p-1.5 rounded-lg group-hover:bg-primary/20 transition-colors">
+						<Sparkles class="h-5 w-5 text-primary" />
 					</div>
-				</div>
+					<span class="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600 tracking-tight">Findora</span>
+				</a>
 
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						class="inline-flex items-center gap-1 sm:gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 touch-manipulation"
-					>
-						<Avatar class="size-7 sm:size-8 md:size-9">
-							<AvatarFallback class="text-xs sm:text-sm">{getInitials(authStore.user?.name || 'U')}</AvatarFallback>
-						</Avatar>
-						<span class="hidden lg:inline">{authStore.user?.name}</span>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" class="w-56">
-						<DropdownMenuLabel>My Account</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem>
-							<a href="/dashboard/settings" class="flex items-center w-full">
-								<Settings class="mr-2 h-4 w-4" />
-								Settings
-							</a>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onclick={async () => {
-								await authStore.logout();
-							}}
-						>
-							<LogOut class="mr-2 h-4 w-4" />
-							Log out
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-		</div>
-		{#if mobileMenuOpen}
-			<div class="md:hidden border-t bg-card">
-				<div class="px-4 py-2 space-y-1">
+				<!-- Desktop Navigation -->
+				<div class="hidden md:flex items-center gap-1">
 					{#if authStore.isAdmin}
 						<a
 							href="/dashboard/admin"
-							class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors {currentPath.startsWith('/dashboard/admin')
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => (mobileMenuOpen = false)}
+							class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {currentPath.startsWith('/dashboard/admin')
+								? 'bg-primary/10 text-primary shadow-sm'
+								: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
 						>
-							<Shield class="h-4 w-4" />
+							<Shield class="inline h-4 w-4 mr-2" />
 							Admin
 						</a>
 					{:else}
 						<a
 							href="/dashboard"
-							class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors {currentPath === '/dashboard'
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => (mobileMenuOpen = false)}
+							class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {currentPath === '/dashboard'
+								? 'bg-primary/10 text-primary shadow-sm'
+								: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
 						>
-							<Home class="h-4 w-4" />
+							<Home class="inline h-4 w-4 mr-2" />
 							Dashboard
 						</a>
 						<a
 							href="/dashboard/found"
-							class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors {currentPath === '/dashboard/found'
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => (mobileMenuOpen = false)}
+							class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/found'
+								? 'bg-primary/10 text-primary shadow-sm'
+								: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
 						>
-							<Search class="h-4 w-4" />
+							<Search class="inline h-4 w-4 mr-2" />
 							Browse Found
 						</a>
 						<a
 							href="/dashboard/report"
-							class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors {currentPath === '/dashboard/report'
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => (mobileMenuOpen = false)}
+							class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/report'
+								? 'bg-primary/10 text-primary shadow-sm'
+								: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
 						>
-							<FileQuestion class="h-4 w-4" />
+							<FileQuestion class="inline h-4 w-4 mr-2" />
 							Report Item
 						</a>
 						<a
 							href="/dashboard/matches"
-							class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors {currentPath === '/dashboard/matches'
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => (mobileMenuOpen = false)}
+							class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/matches'
+								? 'bg-primary/10 text-primary shadow-sm'
+								: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
 						>
-							<CheckCircle class="h-4 w-4" />
-							My Matches
+							<CheckCircle class="inline h-4 w-4 mr-2" />
+							Matches
 						</a>
 						<a
 							href="/dashboard/my-items"
-							class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors {currentPath === '/dashboard/my-items'
-								? 'bg-primary text-primary-foreground'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => (mobileMenuOpen = false)}
+							class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {currentPath === '/dashboard/my-items'
+								? 'bg-primary/10 text-primary shadow-sm'
+								: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
 						>
-							<Package class="h-4 w-4" />
+							<Package class="inline h-4 w-4 mr-2" />
 							My Items
 						</a>
 					{/if}
 				</div>
 			</div>
-		{/if}
-	</nav>
 
-	<main class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 max-w-7xl">
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					class="inline-flex items-center gap-2 rounded-full pl-1 pr-3 py-1 text-sm font-medium transition-all hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 touch-manipulation border border-transparent hover:border-border/50"
+				>
+					<Avatar class="size-8 ring-2 ring-background">
+						<AvatarFallback class="bg-primary/10 text-primary text-xs font-bold">{getInitials(authStore.user?.name || 'U')}</AvatarFallback>
+					</Avatar>
+					<span class="hidden lg:inline text-sm font-medium opacity-90">{authStore.user?.name}</span>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end" class="w-56 glass border-white/10">
+					<DropdownMenuLabel>My Account</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem>
+						<a href="/dashboard/settings" class="flex items-center w-full">
+							<Settings class="mr-2 h-4 w-4" />
+							Settings
+						</a>
+					</DropdownMenuItem>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem
+						onclick={async () => {
+							await authStore.logout();
+						}}
+						class="text-destructive focus:text-destructive"
+					>
+						<LogOut class="mr-2 h-4 w-4" />
+						Log out
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</nav>
+	</div>
+
+	<!-- Mobile Menu Overlay -->
+	{#if mobileMenuOpen}
+		<div 
+			class="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden pt-24 px-4"
+			transition:fade={{ duration: 200 }}
+			onclick={() => (mobileMenuOpen = false)}
+		>
+			<div 
+				class="glass rounded-2xl p-2 space-y-1 shadow-2xl border-white/10"
+				transition:fly={{ y: -20, duration: 300 }}
+				onclick={(e) => e.stopPropagation()}
+			>
+				{#if authStore.isAdmin}
+					<a
+						href="/dashboard/admin"
+						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath.startsWith('/dashboard/admin')
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
+						onclick={() => (mobileMenuOpen = false)}
+					>
+						<Shield class="h-5 w-5" />
+						Admin
+					</a>
+				{:else}
+					<a
+						href="/dashboard"
+						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard'
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
+						onclick={() => (mobileMenuOpen = false)}
+					>
+						<Home class="h-5 w-5" />
+						Dashboard
+					</a>
+					<a
+						href="/dashboard/found"
+						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/found'
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
+						onclick={() => (mobileMenuOpen = false)}
+					>
+						<Search class="h-5 w-5" />
+						Browse Found
+					</a>
+					<a
+						href="/dashboard/report"
+						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/report'
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
+						onclick={() => (mobileMenuOpen = false)}
+					>
+						<FileQuestion class="h-5 w-5" />
+						Report Item
+					</a>
+					<a
+						href="/dashboard/matches"
+						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/matches'
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
+						onclick={() => (mobileMenuOpen = false)}
+					>
+						<CheckCircle class="h-5 w-5" />
+						My Matches
+					</a>
+					<a
+						href="/dashboard/my-items"
+						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/my-items'
+							? 'bg-primary/10 text-primary'
+							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
+						onclick={() => (mobileMenuOpen = false)}
+					>
+						<Package class="h-5 w-5" />
+						My Items
+					</a>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
+	<!-- Main Content -->
+	<main class="flex-1 container mx-auto px-4 pt-28 pb-12 max-w-7xl relative z-0">
 		{@render children()}
 	</main>
 </div>
-

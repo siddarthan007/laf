@@ -1,11 +1,18 @@
 import logging
 import uuid
+import asyncio
 from pathlib import Path
+from typing import Optional
 
 import aiofiles
+import boto3
+from botocore.exceptions import ClientError
 from fastapi import HTTPException, UploadFile, status
 
+from app.config.settings import get_settings
+
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 async def read_validated_upload(
@@ -37,69 +44,92 @@ async def save_upload_file(
     destination_dir: Path,
     *,
     file_bytes: bytes | None = None,
-) -> Path:
-    """Persist an uploaded file to the configured storage directory."""
-
-    destination_dir.mkdir(parents=True, exist_ok=True)
+) -> str:
+    """
+    Persist an uploaded file.
+    
+    If S3_BUCKET_NAME is set, uploads to S3 and returns the public URL.
+    Otherwise, saves to the local filesystem and returns the relative path.
+    """
     file_extension = Path(upload_file.filename or "").suffix or ".bin"
     file_name = f"{uuid.uuid4()}{file_extension}"
-    target_path = destination_dir / file_name
-
     data = file_bytes if file_bytes is not None else await upload_file.read()
+
+    # S3 Upload
+    if settings.s3_bucket_name:
+        try:
+            s3_client = boto3.client("s3", region_name=settings.aws_region)
+            
+            # Run blocking S3 call in a thread
+            await asyncio.to_thread(
+                s3_client.put_object,
+                Bucket=settings.s3_bucket_name,
+                Key=file_name,
+                Body=data,
+                ContentType=upload_file.content_type or "application/octet-stream",
+            )
+            
+            # Return the public URL
+            # If using CloudFront, this should ideally be the CloudFront URL, 
+            # but standard S3 URL is a safe default for now.
+            return f"https://{settings.s3_bucket_name}.s3.{settings.aws_region}.amazonaws.com/{file_name}"
+            
+        except Exception as e:
+            logger.error(f"Failed to upload to S3: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to upload file to storage")
+            
+    # Local Upload (Fallback)
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    target_path = destination_dir / file_name
 
     async with aiofiles.open(target_path, "wb") as buffer:
         await buffer.write(data)
 
     await upload_file.close()
-    return target_path
+    
+    # Return relative path for local storage (e.g., "/static/uploads/uuid.ext")
+    # We prepend a slash so the frontend treats it as an absolute path from root
+    return f"/static/uploads/{file_name}"
 
 
 async def delete_upload_file(image_url: str | None, upload_dir: Path) -> None:
-    """Delete an uploaded image file if it exists.
-    
-    Args:
-        image_url: The image URL path (e.g., "/static/uploads/uuid.ext")
-        upload_dir: The base upload directory path (e.g., "static/uploads")
-    """
+    """Delete an uploaded image file from S3 or local disk."""
     if not image_url:
         return
     
+    # Check if it's an S3 URL
+    if image_url.startswith("http") and settings.s3_bucket_name:
+        try:
+            # Extract key from URL
+            # URL: https://bucket.s3.region.amazonaws.com/filename.ext
+            filename = image_url.split("/")[-1]
+            
+            s3_client = boto3.client("s3", region_name=settings.aws_region)
+            await asyncio.to_thread(
+                s3_client.delete_object,
+                Bucket=settings.s3_bucket_name,
+                Key=filename
+            )
+            logger.info(f"Deleted S3 object: {filename}")
+            return
+        except Exception as e:
+            logger.error(f"Failed to delete from S3: {e}", exc_info=True)
+            return
+
+    # Local Deletion
     try:
         # Remove leading slash if present
-        # image_url format: "/static/uploads/uuid.ext"
-        # We need to extract just the filename: "uuid.ext"
         path_str = image_url.lstrip("/")
         path_parts = Path(path_str).parts
-        
-        # Extract filename from the path (last part)
-        # path_parts could be: ("static", "uploads", "uuid.ext")
         filename = path_parts[-1] if path_parts else None
         
         if not filename:
-            logger.warning(f"Could not extract filename from image URL: {image_url}")
             return
         
-        # Construct the full file path
         file_path = upload_dir / filename
-        
-        # Ensure the file is within the upload directory for security
-        upload_dir_abs = upload_dir.resolve()
-        file_path_abs = file_path.resolve()
-        
-        # Security check: ensure file is within upload directory
-        try:
-            file_path_abs.relative_to(upload_dir_abs)
-        except ValueError:
-            logger.warning(f"Attempted to delete file outside upload directory: {image_url}")
-            return
-        
-        # Delete the file if it exists
-        if file_path_abs.exists() and file_path_abs.is_file():
-            file_path_abs.unlink()
-            logger.info(f"Deleted image file: {file_path_abs}")
-        else:
-            logger.debug(f"Image file not found (may have been already deleted): {file_path_abs}")
+        if file_path.exists():
+            file_path.unlink()
+            logger.info(f"Deleted local file: {file_path}")
+            
     except Exception as e:
-        # Log error but don't fail the deletion operation
-        logger.error(f"Failed to delete image file {image_url}: {e}", exc_info=True)
-
+        logger.error(f"Failed to delete local file: {e}", exc_info=True)

@@ -10,11 +10,15 @@ class Settings(BaseSettings):
 
     project_name: str = "Lost & Found API"
     environment: str = Field(default="development", validation_alias="ENVIRONMENT")
+    backend_cors_origins: list[str] = Field(
+        default=["http://localhost:5173", "http://localhost:3000"], alias="BACKEND_CORS_ORIGINS"
+    )
 
     database_url: str = Field(
         default="postgresql+psycopg://postgres:postgres@localhost:5432/lostfound",
         alias="DATABASE_URL",
     )
+    database_ssl_mode: str = Field(default="prefer", alias="DATABASE_SSL_MODE")
     pgvector_enabled: bool = Field(default=True, alias="PGVECTOR_ENABLED")
 
     jwt_secret_key: str = Field(default="change-this-secret", alias="JWT_SECRET_KEY")
@@ -29,8 +33,15 @@ class Settings(BaseSettings):
     embeddings_device: str = Field(default="cpu", alias="EMBEDDINGS_DEVICE")
     embeddings_batch_size: int = Field(default=8, alias="EMBEDDINGS_BATCH_SIZE")
 
+    embeddings_batch_size: int = Field(default=8, alias="EMBEDDINGS_BATCH_SIZE")
+
+    # Storage
+    s3_bucket_name: str | None = Field(default=None, alias="S3_BUCKET_NAME")
+    aws_region: str = Field(default="ap-south-1", alias="AWS_REGION")
+    
     static_upload_dir: Path = Field(default=Path("static/uploads"), alias="STATIC_UPLOAD_DIR")
     match_confidence_threshold: float = Field(default=0.70, alias="MATCH_CONFIDENCE_THRESHOLD")
+    matching_time_window_days: int = Field(default=30, alias="MATCHING_TIME_WINDOW_DAYS")
     max_matches_returned: int = Field(default=20, alias="MAX_MATCHES_RETURNED")
     upload_max_bytes: int = Field(default=5 * 1024 * 1024, alias="UPLOAD_MAX_BYTES")
     upload_allowed_mimetypes: tuple[str, ...] = Field(
@@ -61,6 +72,11 @@ def get_settings() -> Settings:
     """Return cached application settings instance."""
 
     settings = Settings()
-    settings.static_upload_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        settings.static_upload_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        # Likely running in a read-only environment (e.g., AWS Lambda)
+        # If S3 is configured, this is fine. If not, local uploads will fail later.
+        pass
     return settings
 

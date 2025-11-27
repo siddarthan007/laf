@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,11 +32,10 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
+        allow_origins=[str(origin) for origin in settings.backend_cors_origins] + [
+            "https://staging.d1mkzua6r0j55a.amplifyapp.com",
             "http://localhost:5173",
             "http://localhost:3000",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000",
         ],
         allow_credentials=True,
         allow_methods=["*"],
@@ -44,7 +44,13 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router)
 
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+    
+    base_dir = Path(__file__).resolve().parent.parent
+    static_dir = base_dir / "static"
+    
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     @app.get("/health", tags=["system"])
     async def health_check() -> dict[str, str]:
@@ -54,5 +60,11 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="on")
+except ImportError:
+    handler = None
 
 

@@ -16,6 +16,7 @@
 	import { onMount } from 'svelte';
 	import { setUserContext } from '$lib/contexts/user.svelte';
 	import { fly, fade } from 'svelte/transition';
+	import { afterNavigate } from '$app/navigation';
 
 	let { children } = $props();
 	let mobileMenuOpen = $state(false);
@@ -25,6 +26,10 @@
 
 	onMount(async () => {
 		await userContext.init();
+	});
+
+	afterNavigate(() => {
+		mobileMenuOpen = false;
 	});
 
 	function getInitials(name: string) {
@@ -42,7 +47,7 @@
 <div class="min-h-screen flex flex-col relative overflow-hidden">
 	<!-- Floating Navbar -->
 	<div class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center">
-		<nav class="glass rounded-2xl w-full max-w-7xl px-4 py-3 flex items-center justify-between transition-all duration-300 hover:shadow-xl hover:bg-card/95">
+		<nav class="bg-white/100 dark:bg-gray-950/100 border border-white/20 dark:border-gray-800/50 rounded-2xl w-full max-w-7xl px-4 py-3 flex items-center justify-between transition-all duration-300 shadow-xl">
 			<div class="flex items-center gap-2 sm:gap-4 md:gap-8">
 				<!-- Mobile Menu Button -->
 				<Button
@@ -138,7 +143,7 @@
 					</Avatar>
 					<span class="hidden lg:inline text-sm font-medium opacity-90">{authStore.user?.name}</span>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" class="w-56 glass border-white/10">
+				<DropdownMenuContent align="end" class="w-56 bg-popover border-border">
 					<DropdownMenuLabel>My Account</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem>
@@ -170,7 +175,7 @@
 			onclick={() => (mobileMenuOpen = false)}
 		>
 			<div 
-				class="glass rounded-2xl p-2 space-y-1 shadow-2xl border-white/10"
+				class="bg-popover rounded-2xl p-2 space-y-1 shadow-2xl border-border"
 				transition:fly={{ y: -20, duration: 300 }}
 				onclick={(e) => e.stopPropagation()}
 			>
@@ -180,7 +185,6 @@
 						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath.startsWith('/dashboard/admin')
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
-						onclick={() => (mobileMenuOpen = false)}
 					>
 						<Shield class="h-5 w-5" />
 						Admin
@@ -191,7 +195,6 @@
 						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard'
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
-						onclick={() => (mobileMenuOpen = false)}
 					>
 						<Home class="h-5 w-5" />
 						Dashboard
@@ -201,7 +204,6 @@
 						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/found'
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
-						onclick={() => (mobileMenuOpen = false)}
 					>
 						<Search class="h-5 w-5" />
 						Browse Found
@@ -211,7 +213,6 @@
 						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/report'
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
-						onclick={() => (mobileMenuOpen = false)}
 					>
 						<FileQuestion class="h-5 w-5" />
 						Report Item
@@ -221,7 +222,6 @@
 						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/matches'
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
-						onclick={() => (mobileMenuOpen = false)}
 					>
 						<CheckCircle class="h-5 w-5" />
 						My Matches
@@ -231,7 +231,6 @@
 						class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors {currentPath === '/dashboard/my-items'
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}"
-						onclick={() => (mobileMenuOpen = false)}
 					>
 						<Package class="h-5 w-5" />
 						My Items

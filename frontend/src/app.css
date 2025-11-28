@@ -13,11 +13,11 @@
   --foreground: oklch(0.15 0.04 260);
   /* Deep indigo-black */
 
-  --card: oklch(1 0 0 / 0.7);
-  /* Glassy white */
+  --card: oklch(1 0 0);
+  /* Solid white */
   --card-foreground: oklch(0.15 0.04 260);
 
-  --popover: oklch(1 0 0 / 0.9);
+  --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.04 260);
 
   /* Primary: Vibrant Violet/Indigo */
@@ -63,11 +63,11 @@
   /* Deep violet-black */
   --foreground: oklch(0.95 0.02 280);
 
-  --card: oklch(0.15 0.05 280 / 0.6);
-  /* Glassy dark */
+  --card: oklch(0.15 0.05 280);
+  /* Solid dark */
   --card-foreground: oklch(0.95 0.02 280);
 
-  --popover: oklch(0.15 0.05 280 / 0.9);
+  --popover: oklch(0.15 0.05 280);
   --popover-foreground: oklch(0.95 0.02 280);
 
   --primary: oklch(0.65 0.25 280);
